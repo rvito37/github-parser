@@ -1,0 +1,77 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#1a1e2e;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#2d1b4e;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="accent" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#58a6ff;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#a371f7;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="glow" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#58a6ff;stop-opacity:0.3" />
+      <stop offset="100%" style="stop-color:#a371f7;stop-opacity:0.3" />
+    </linearGradient>
+  </defs>
+
+  <!-- Background rounded square -->
+  <rect x="16" y="16" width="480" height="480" rx="96" ry="96" fill="url(#bg)" />
+
+  <!-- Subtle grid lines for "data/parser" feel -->
+  <g opacity="0.06" stroke="#ffffff" stroke-width="1">
+    <line x1="16" y1="136" x2="496" y2="136" />
+    <line x1="16" y1="256" x2="496" y2="256" />
+    <line x1="16" y1="376" x2="496" y2="376" />
+    <line x1="136" y1="16" x2="136" y2="496" />
+    <line x1="256" y1="16" x2="256" y2="496" />
+    <line x1="376" y1="16" x2="376" y2="496" />
+  </g>
+
+  <!-- Outer glow ring -->
+  <circle cx="256" cy="232" r="140" fill="none" stroke="url(#glow)" stroke-width="24" />
+
+  <!-- GitHub-style octocat silhouette (simplified) -->
+  <!-- Main head circle -->
+  <circle cx="256" cy="200" r="88" fill="url(#accent)" />
+
+  <!-- Ears -->
+  <path d="M188 152 L172 100 L210 132 Z" fill="url(#accent)" />
+  <path d="M324 152 L340 100 L302 132 Z" fill="url(#accent)" />
+
+  <!-- Face cutouts - eyes -->
+  <ellipse cx="226" cy="194" rx="18" ry="22" fill="#1a1e2e" />
+  <ellipse cx="286" cy="194" rx="18" ry="22" fill="#1a1e2e" />
+
+  <!-- Eye pupils -->
+  <ellipse cx="230" cy="196" rx="8" ry="10" fill="#ffffff" />
+  <ellipse cx="290" cy="196" rx="8" ry="10" fill="#ffffff" />
+
+  <!-- Nose/mouth -->
+  <ellipse cx="256" cy="224" rx="14" ry="8" fill="#1a1e2e" />
+  <path d="M248 228 Q256 238 264 228" fill="none" stroke="#1a1e2e" stroke-width="3" />
+
+  <!-- Body -->
+  <path d="M190 280 Q190 310 220 320 L292 320 Q322 310 322 280 Q322 260 290 258 L222 258 Q190 260 190 280 Z" fill="url(#accent)" />
+
+  <!-- Tentacles/arms -->
+  <path d="M200 310 Q180 350 160 360" fill="none" stroke="url(#accent)" stroke-width="14" stroke-linecap="round" />
+  <path d="M312 310 Q332 350 352 360" fill="none" stroke="url(#accent)" stroke-width="14" stroke-linecap="round" />
+
+  <!-- Code brackets < / > for "parser" -->
+  <g transform="translate(256, 420)" fill="none" stroke-width="10" stroke-linecap="round" stroke-linejoin="round">
+    <!-- < -->
+    <path d="M-70,-18 L-95,0 L-70,18" stroke="#58a6ff" />
+    <!-- / -->
+    <path d="M-15,-22 L15,22" stroke="#8b949e" />
+    <!-- > -->
+    <path d="M70,-18 L95,0 L70,18" stroke="#a371f7" />
+  </g>
+
+  <!-- Small data dots -->
+  <circle cx="100" cy="420" r="4" fill="#58a6ff" opacity="0.5" />
+  <circle cx="116" cy="420" r="4" fill="#58a6ff" opacity="0.7" />
+  <circle cx="132" cy="420" r="4" fill="#58a6ff" opacity="0.9" />
+  <circle cx="380" cy="420" r="4" fill="#a371f7" opacity="0.5" />
+  <circle cx="396" cy="420" r="4" fill="#a371f7" opacity="0.7" />
+  <circle cx="412" cy="420" r="4" fill="#a371f7" opacity="0.9" />
+</svg>
