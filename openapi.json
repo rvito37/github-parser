@@ -1,0 +1,783 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "GitHub Profile Parser API",
+    "description": "A fast, reliable API for parsing GitHub user profiles and repositories.\n\n## Features\n- **Profile data**: Retrieve detailed user info (bio, stats, location, company, etc.)\n- **Pinned repos**: Get pinned repositories that aren't available via GitHub's REST API\n- **Contribution stats**: Total contributions in the last year\n- **Achievement badges**: List of GitHub achievement badges\n- **Repositories**: Paginated, sortable list of public repos with full metadata\n- **Caching**: 5-minute TTL cache for fast responses\n\n## How it works\nHybrid approach combining GitHub REST API (structured data) with HTML scraping (pinned repos, contributions, achievements) to provide the most complete profile data possible.",
+    "version": "1.0.0"
+  },
+  "paths": {
+    "/profile/{username}": {
+      "get": {
+        "tags": [
+          "Profile"
+        ],
+        "summary": "Get GitHub user profile",
+        "description": "Retrieve a comprehensive GitHub user profile by username. Combines data from the GitHub REST API (basic info, stats) with HTML scraping (pinned repos, contribution graph, achievement badges). Results are cached for 5 minutes.",
+        "operationId": "get_profile_profile__username__get",
+        "parameters": [
+          {
+            "name": "username",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Username"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "User profile retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GitHubProfile"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "GitHub user not found"
+          },
+          "429": {
+            "description": "Rate limit exceeded (GitHub API or local rate limit)"
+          },
+          "502": {
+            "description": "GitHub API upstream error"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/repos/{username}": {
+      "get": {
+        "tags": [
+          "Repositories"
+        ],
+        "summary": "Get GitHub user repositories",
+        "description": "Retrieve a paginated list of public repositories for a GitHub user. Supports sorting by creation date, last update, last push, name, or stars. Results are cached for 5 minutes.",
+        "operationId": "get_repositories_repos__username__get",
+        "parameters": [
+          {
+            "name": "username",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Username"
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "description": "Page number for pagination",
+              "default": 1,
+              "title": "Page"
+            },
+            "description": "Page number for pagination"
+          },
+          {
+            "name": "per_page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 100,
+              "minimum": 1,
+              "description": "Number of repositories per page (max 100)",
+              "default": 30,
+              "title": "Per Page"
+            },
+            "description": "Number of repositories per page (max 100)"
+          },
+          {
+            "name": "sort",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "pattern": "^(created|updated|pushed|full_name|stars)$",
+              "description": "Sort by: created, updated, pushed, full_name, or stars",
+              "default": "updated",
+              "title": "Sort"
+            },
+            "description": "Sort by: created, updated, pushed, full_name, or stars"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Repositories retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RepositoriesResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "GitHub user not found"
+          },
+          "429": {
+            "description": "Rate limit exceeded (GitHub API or local rate limit)"
+          },
+          "502": {
+            "description": "GitHub API upstream error"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/health": {
+      "get": {
+        "tags": [
+          "Health"
+        ],
+        "summary": "Health check",
+        "description": "Returns API health status. Use this to verify the API is running.",
+        "operationId": "health_check_health_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "ContributionStats": {
+        "properties": {
+          "total_contributions_last_year": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Total Contributions Last Year",
+            "description": "Total number of contributions in the last year",
+            "examples": [
+              2847
+            ]
+          }
+        },
+        "type": "object",
+        "title": "ContributionStats"
+      },
+      "GitHubProfile": {
+        "properties": {
+          "username": {
+            "type": "string",
+            "title": "Username",
+            "description": "GitHub username",
+            "examples": [
+              "torvalds"
+            ]
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name",
+            "description": "Display name",
+            "examples": [
+              "Linus Torvalds"
+            ]
+          },
+          "bio": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Bio",
+            "description": "Profile bio"
+          },
+          "avatar_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Avatar Url",
+            "description": "Avatar image URL",
+            "examples": [
+              "https://avatars.githubusercontent.com/u/1024025?v=4"
+            ]
+          },
+          "location": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Location",
+            "description": "User location",
+            "examples": [
+              "Portland, OR"
+            ]
+          },
+          "company": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Company",
+            "description": "Company or organization",
+            "examples": [
+              "Linux Foundation"
+            ]
+          },
+          "blog": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Blog",
+            "description": "Blog or website URL"
+          },
+          "twitter_username": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Twitter Username",
+            "description": "Twitter/X username"
+          },
+          "email": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Email",
+            "description": "Public email address"
+          },
+          "public_repos": {
+            "type": "integer",
+            "title": "Public Repos",
+            "description": "Number of public repositories",
+            "default": 0,
+            "examples": [
+              7
+            ]
+          },
+          "public_gists": {
+            "type": "integer",
+            "title": "Public Gists",
+            "description": "Number of public gists",
+            "default": 0,
+            "examples": [
+              0
+            ]
+          },
+          "followers": {
+            "type": "integer",
+            "title": "Followers",
+            "description": "Number of followers",
+            "default": 0,
+            "examples": [
+              228000
+            ]
+          },
+          "following": {
+            "type": "integer",
+            "title": "Following",
+            "description": "Number of users being followed",
+            "default": 0,
+            "examples": [
+              0
+            ]
+          },
+          "created_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Created At",
+            "description": "Account creation date (ISO 8601)",
+            "examples": [
+              "2011-09-03T15:26:22Z"
+            ]
+          },
+          "updated_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Updated At",
+            "description": "Last profile update (ISO 8601)",
+            "examples": [
+              "2025-01-15T10:30:00Z"
+            ]
+          },
+          "pinned_repos": {
+            "items": {
+              "$ref": "#/components/schemas/PinnedRepo"
+            },
+            "type": "array",
+            "title": "Pinned Repos",
+            "description": "Pinned repositories (scraped from profile page)",
+            "default": []
+          },
+          "contribution_stats": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ContributionStats"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Contribution statistics for the last year"
+          },
+          "achievements": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Achievements",
+            "description": "GitHub achievement badges",
+            "default": [],
+            "examples": [
+              [
+                "Arctic Code Vault Contributor",
+                "Pull Shark"
+              ]
+            ]
+          }
+        },
+        "type": "object",
+        "required": [
+          "username"
+        ],
+        "title": "GitHubProfile"
+      },
+      "GitHubRepository": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "title": "Name",
+            "description": "Repository name",
+            "examples": [
+              "linux"
+            ]
+          },
+          "full_name": {
+            "type": "string",
+            "title": "Full Name",
+            "description": "Full repository name (owner/repo)",
+            "examples": [
+              "torvalds/linux"
+            ]
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description",
+            "description": "Repository description",
+            "examples": [
+              "Linux kernel source tree"
+            ]
+          },
+          "html_url": {
+            "type": "string",
+            "title": "Html Url",
+            "description": "URL to repository on GitHub",
+            "examples": [
+              "https://github.com/torvalds/linux"
+            ]
+          },
+          "language": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Language",
+            "description": "Primary programming language",
+            "examples": [
+              "C"
+            ]
+          },
+          "topics": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Topics",
+            "description": "Repository topics/tags",
+            "default": [],
+            "examples": [
+              [
+                "kernel",
+                "linux",
+                "operating-system"
+              ]
+            ]
+          },
+          "stars": {
+            "type": "integer",
+            "title": "Stars",
+            "description": "Number of stars",
+            "default": 0,
+            "examples": [
+              185000
+            ]
+          },
+          "forks": {
+            "type": "integer",
+            "title": "Forks",
+            "description": "Number of forks",
+            "default": 0,
+            "examples": [
+              55000
+            ]
+          },
+          "watchers": {
+            "type": "integer",
+            "title": "Watchers",
+            "description": "Number of watchers",
+            "default": 0,
+            "examples": [
+              185000
+            ]
+          },
+          "open_issues": {
+            "type": "integer",
+            "title": "Open Issues",
+            "description": "Number of open issues",
+            "default": 0,
+            "examples": [
+              350
+            ]
+          },
+          "is_fork": {
+            "type": "boolean",
+            "title": "Is Fork",
+            "description": "Whether the repo is a fork",
+            "default": false
+          },
+          "is_archived": {
+            "type": "boolean",
+            "title": "Is Archived",
+            "description": "Whether the repo is archived",
+            "default": false
+          },
+          "created_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Created At",
+            "description": "Creation date (ISO 8601)",
+            "examples": [
+              "2011-09-04T22:48:12Z"
+            ]
+          },
+          "updated_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Updated At",
+            "description": "Last update date (ISO 8601)",
+            "examples": [
+              "2025-01-20T12:00:00Z"
+            ]
+          },
+          "pushed_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Pushed At",
+            "description": "Last push date (ISO 8601)",
+            "examples": [
+              "2025-01-20T11:55:00Z"
+            ]
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "full_name",
+          "html_url"
+        ],
+        "title": "GitHubRepository"
+      },
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "type": "array",
+            "title": "Detail"
+          }
+        },
+        "type": "object",
+        "title": "HTTPValidationError"
+      },
+      "PinnedRepo": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "title": "Name",
+            "description": "Repository name",
+            "examples": [
+              "linux"
+            ]
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description",
+            "description": "Repository description",
+            "examples": [
+              "Linux kernel source tree"
+            ]
+          },
+          "language": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Language",
+            "description": "Primary programming language",
+            "examples": [
+              "C"
+            ]
+          },
+          "stars": {
+            "type": "integer",
+            "title": "Stars",
+            "description": "Number of stars",
+            "default": 0,
+            "examples": [
+              185000
+            ]
+          }
+        },
+        "type": "object",
+        "required": [
+          "name"
+        ],
+        "title": "PinnedRepo",
+        "examples": [
+          {
+            "description": "Linux kernel source tree",
+            "language": "C",
+            "name": "linux",
+            "stars": 185000
+          }
+        ]
+      },
+      "RepositoriesResponse": {
+        "properties": {
+          "username": {
+            "type": "string",
+            "title": "Username",
+            "description": "GitHub username",
+            "examples": [
+              "torvalds"
+            ]
+          },
+          "total_count": {
+            "type": "integer",
+            "title": "Total Count",
+            "description": "Number of repositories returned in this page",
+            "examples": [
+              7
+            ]
+          },
+          "page": {
+            "type": "integer",
+            "title": "Page",
+            "description": "Current page number",
+            "examples": [
+              1
+            ]
+          },
+          "per_page": {
+            "type": "integer",
+            "title": "Per Page",
+            "description": "Items per page",
+            "examples": [
+              30
+            ]
+          },
+          "repositories": {
+            "items": {
+              "$ref": "#/components/schemas/GitHubRepository"
+            },
+            "type": "array",
+            "title": "Repositories",
+            "description": "List of repositories"
+          }
+        },
+        "type": "object",
+        "required": [
+          "username",
+          "total_count",
+          "page",
+          "per_page",
+          "repositories"
+        ],
+        "title": "RepositoriesResponse"
+      },
+      "ValidationError": {
+        "properties": {
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "type": "array",
+            "title": "Location"
+          },
+          "msg": {
+            "type": "string",
+            "title": "Message"
+          },
+          "type": {
+            "type": "string",
+            "title": "Error Type"
+          },
+          "input": {
+            "title": "Input"
+          },
+          "ctx": {
+            "type": "object",
+            "title": "Context"
+          }
+        },
+        "type": "object",
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ValidationError"
+      }
+    }
+  },
+  "tags": [
+    {
+      "name": "Profile",
+      "description": "Get comprehensive GitHub user profiles including pinned repos, contribution stats, and achievements."
+    },
+    {
+      "name": "Repositories",
+      "description": "Browse and search public repositories for any GitHub user with sorting and pagination."
+    },
+    {
+      "name": "Health",
+      "description": "API health check endpoint."
+    }
+  ]
+}

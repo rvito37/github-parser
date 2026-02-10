@@ -7,13 +7,28 @@ from app.services.github_api import GitHubAPIClient
 router = APIRouter()
 
 
-@router.get("/repos/{username}", response_model=RepositoriesResponse)
+@router.get(
+    "/repos/{username}",
+    response_model=RepositoriesResponse,
+    summary="Get GitHub user repositories",
+    description=(
+        "Retrieve a paginated list of public repositories for a GitHub user. "
+        "Supports sorting by creation date, last update, last push, name, or stars. "
+        "Results are cached for 5 minutes."
+    ),
+    responses={
+        200: {"description": "Repositories retrieved successfully"},
+        404: {"description": "GitHub user not found"},
+        429: {"description": "Rate limit exceeded (GitHub API or local rate limit)"},
+        502: {"description": "GitHub API upstream error"},
+    },
+)
 async def get_repositories(
     username: str,
     request: Request,
-    page: int = Query(1, ge=1),
-    per_page: int = Query(30, ge=1, le=100),
-    sort: str = Query("updated", pattern="^(created|updated|pushed|full_name|stars)$"),
+    page: int = Query(1, ge=1, description="Page number for pagination"),
+    per_page: int = Query(30, ge=1, le=100, description="Number of repositories per page (max 100)"),
+    sort: str = Query("updated", pattern="^(created|updated|pushed|full_name|stars)$", description="Sort by: created, updated, pushed, full_name, or stars"),
 ):
     cache: TTLCache = request.app.state.cache
     api_client: GitHubAPIClient = request.app.state.github_api

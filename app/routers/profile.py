@@ -10,7 +10,23 @@ from app.services.github_scraper import GitHubScraper
 router = APIRouter()
 
 
-@router.get("/profile/{username}", response_model=GitHubProfile)
+@router.get(
+    "/profile/{username}",
+    response_model=GitHubProfile,
+    summary="Get GitHub user profile",
+    description=(
+        "Retrieve a comprehensive GitHub user profile by username. "
+        "Combines data from the GitHub REST API (basic info, stats) with "
+        "HTML scraping (pinned repos, contribution graph, achievement badges). "
+        "Results are cached for 5 minutes."
+    ),
+    responses={
+        200: {"description": "User profile retrieved successfully"},
+        404: {"description": "GitHub user not found"},
+        429: {"description": "Rate limit exceeded (GitHub API or local rate limit)"},
+        502: {"description": "GitHub API upstream error"},
+    },
+)
 async def get_profile(username: str, request: Request):
     cache: TTLCache = request.app.state.cache
     api_client: GitHubAPIClient = request.app.state.github_api
