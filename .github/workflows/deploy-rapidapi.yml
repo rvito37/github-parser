@@ -1,0 +1,43 @@
+name: Deploy to RapidAPI
+
+on:
+  push:
+    branches: [master]
+    paths:
+      - 'app/**'
+      - 'openapi.json'
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Regenerate OpenAPI spec
+        run: |
+          python -c "
+          import json
+          from app.main import app
+          spec = app.openapi()
+          spec['servers'] = [{'url': '${{ secrets.VPS_BASE_URL }}', 'description': 'Production VPS'}]
+          with open('openapi.json', 'w') as f:
+              json.dump(spec, f, indent=2)
+          "
+
+      - name: Upload to RapidAPI
+        uses: RapidAPI/create_or_update_rapidapi_listing@v0
+        with:
+          spec_path: openapi.json
+          owner_id: ${{ secrets.RAPIDAPI_OWNER_ID }}
+          x_rapidapi_key: ${{ secrets.RAPIDAPI_KEY }}
+          x_rapidapi_graphql_host: graphql-platform.p.rapidapi.com
+          graphql_url: https://graphql-platform.p.rapidapi.com/

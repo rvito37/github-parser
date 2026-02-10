@@ -779,5 +779,11 @@
       "name": "Health",
       "description": "API health check endpoint."
     }
+  ],
+  "servers": [
+    {
+      "url": "http://76.13.77.49:8001",
+      "description": "Production VPS (Hostinger)"
+    }
   ]
 }
